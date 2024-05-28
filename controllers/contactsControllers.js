@@ -65,24 +65,10 @@ const updateContact = async (req, res, next) => {
     }
 };
 
-const updateStatusContact = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const contact = await contactsService.updateContact(id, req.body);
-
-    if (!contact) throw HttpError(404);
-
-    res.json(contact);
-  } catch (error) {
-    next(error.status ? error : {});
-  }
-};
-
 export default {
 getAllContacts,
 getOneContact,
 deleteContact,
 createContact,
-updateContact,
-updateStatusContact
+updateContact
 }
