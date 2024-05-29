@@ -1,79 +1,32 @@
-import * as fs from "node:fs/promises";
-import path from "node:path";
-import crypto from "node:crypto";
+import Contact from '../schemas/contactsModel.js';
+import { queryProjection } from '../schemas/contactsModel.js';
 
-const contactsPath = path.resolve("db", "contacts.json");
+const count = filter => Contact.countDocuments(filter);
 
-async function readContacts() {
-  const data = await fs.readFile(contactsPath, { encoding: "utf-8" });
+const list = (filter, pagination) =>
+  Contact.find(filter)
+    .select(queryProjection)
+    .skip(pagination.skip)
+    .limit(pagination.limit);
 
-  return JSON.parse(data);
-}
+const getById = contactId =>
+  Contact.findById(contactId).select(queryProjection);
 
-function writeContacts(contacts) {
-  return fs.writeFile(contactsPath, JSON.stringify(contacts, undefined, 2));
-}
+const remove = contactId =>
+  Contact.findByIdAndDelete(contactId).select(queryProjection);
 
-async function listContacts() {
-  const contacts = await readContacts();
+const add = contactData => Contact.create(contactData);
 
-  return contacts;
-}
+const update = (contactId, contactData) =>
+  Contact.findByIdAndUpdate(contactId, contactData, {
+    new: true,
+  }).select(queryProjection);
 
-async function getContactById(contactId) {
-  const contacts = await readContacts();
-
-  const contact = contacts.find((contact) => contact.id === contactId);
-
-  if (typeof contact === "undefined") {
-    return null;
-  }
-
-  return contact;
-}
-
-async function removeContact(contactId) {
-  const contacts = await readContacts();
-
-  const index = contacts.findIndex((contact) => contact.id === contactId);
-
-  if (index === -1) {
-    return null;
-  }
-
-  const removedContact = contacts[index];
-
-  contacts.splice(index, 1);
-
-  await writeContacts(contacts);
-
-  return removedContact;
-}
-
-async function addContact(name, email, phone) {
-  const contacts = await readContacts();
-
-  const newContact = { id: crypto.randomUUID(), name, email, phone };
-
-  contacts.push(newContact);
-
-  await writeContacts(contacts);
-
-  return newContact;
-}
-
-async function updateContact(id, updatedData) {
-    const contacts = await readContacts();
-    const index = contacts.findIndex((item) => item.id === id);
-
-    if (index === -1) return null;
-
-    const updContact = { ...contacts[index], ...updatedData };
-    contacts[index] = updContact;
-
-    await writeContacts(contacts);
-
-    return updContact;
-}
-
-export default { listContacts, getContactById, removeContact, addContact, updateContact };
+export default {
+  count,
+  list,
+  getById,
+  remove,
+  add,
+  update,
+};
