@@ -1,79 +1,36 @@
-import * as fs from "node:fs/promises";
-import path from "node:path";
-import crypto from "node:crypto";
-
-const contactsPath = path.resolve("db", "contacts.json");
-
-async function readContacts() {
-  const data = await fs.readFile(contactsPath, { encoding: "utf-8" });
-
-  return JSON.parse(data);
-}
-
-function writeContacts(contacts) {
-  return fs.writeFile(contactsPath, JSON.stringify(contacts, undefined, 2));
-}
+import Contact from '../schemas/contactsModel.js';
 
 async function listContacts() {
-  const contacts = await readContacts();
-
+  const contacts = await Contact.find();
   return contacts;
 }
 
 async function getContactById(contactId) {
-  const contacts = await readContacts();
-
-  const contact = contacts.find((contact) => contact.id === contactId);
-
-  if (typeof contact === "undefined") {
-    return null;
-  }
-
-  return contact;
+  const contact = await Contact.findById(contactId);
+  return contact ? contact : null;
 }
 
 async function removeContact(contactId) {
-  const contacts = await readContacts();
-
-  const index = contacts.findIndex((contact) => contact.id === contactId);
-
-  if (index === -1) {
-    return null;
-  }
-
-  const removedContact = contacts[index];
-
-  contacts.splice(index, 1);
-
-  await writeContacts(contacts);
-
-  return removedContact;
+  const contact = await Contact.findByIdAndDelete({ _id: contactId });
+  return contact;
 }
 
 async function addContact(name, email, phone) {
-  const contacts = await readContacts();
-
-  const newContact = { id: crypto.randomUUID(), name, email, phone };
-
-  contacts.push(newContact);
-
-  await writeContacts(contacts);
-
+  const newContact = await Contact.create({ name, email, phone });
   return newContact;
 }
 
 async function updateContact(id, updatedData) {
-    const contacts = await readContacts();
-    const index = contacts.findIndex((item) => item.id === id);
-
-    if (index === -1) return null;
-
-    const updContact = { ...contacts[index], ...updatedData };
-    contacts[index] = updContact;
-
-    await writeContacts(contacts);
-
-    return updContact;
+  const updContact = await Contact.findByIdAndUpdate({ _id: id }, updatedData, {
+    new: true,
+  });
+  return updContact;
 }
 
-export default { listContacts, getContactById, removeContact, addContact, updateContact };
+export default {
+  listContacts,
+  getContactById,
+  removeContact,
+  addContact,
+  updateContact,
+};
