@@ -7,7 +7,6 @@ async function listContacts() {
 
 async function getContactById(contactId) {
   const contact = await Contact.findById(contactId);
-
   return contact ? contact : null;
 }
 
@@ -18,7 +17,6 @@ async function removeContact(contactId) {
 
 async function addContact(name, email, phone) {
   const newContact = await Contact.create({ name, email, phone });
-
   return newContact;
 }
 
@@ -26,7 +24,6 @@ async function updateContact(id, updatedData) {
   const updContact = await Contact.findByIdAndUpdate({ _id: id }, updatedData, {
     new: true,
   });
-
   return updContact;
 }
 

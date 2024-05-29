@@ -1,5 +1,5 @@
 import contactsService from "../services/contactsServices.js";
-import HttpError from '../helpers/HttpError.js'
+import HttpError from '../helpers/HttpError.js';
 
 const getAllContacts = async (req, res, next) => {
     try {
@@ -19,7 +19,7 @@ const getOneContact = async (req, res, next) => {
         }
 
         res.json(contact);
-    } catch(error) {
+    } catch (error) {
         next(error);
     }
 };
@@ -33,18 +33,18 @@ const deleteContact = async (req, res, next) => {
         }
 
         res.json(contact);
-    } catch(error) {
+    } catch (error) {
         next(error);
     }
 };
 
 const createContact = async (req, res, next) => {
     try {
-        const {name, email, phone} = await req.body;
+        const { name, email, phone } = req.body;
         const contact = await contactsService.addContact(name, email, phone);
 
         res.status(201).json(contact);
-    } catch(error) {
+    } catch (error) {
         next(error);
     }
 };
@@ -66,23 +66,23 @@ const updateContact = async (req, res, next) => {
 };
 
 const updateStatusContact = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const contact = await contactsService.updateContact(id, req.body);
+    try {
+        const { id } = req.params;
+        const contact = await contactsService.updateContact(id, req.body);
 
-    if (!contact) throw HttpError(404);
+        if (!contact) throw HttpError(404);
 
-    res.json(contact);
-  } catch (error) {
-    next(error.status ? error : {});
-  }
+        res.json(contact);
+    } catch (error) {
+        next(error.status ? error : {});
+    }
 };
 
 export default {
-getAllContacts,
-getOneContact,
-deleteContact,
-createContact,
-updateContact,
-updateStatusContact
-}
+    getAllContacts,
+    getOneContact,
+    deleteContact,
+    createContact,
+    updateContact,
+    updateStatusContact
+};
