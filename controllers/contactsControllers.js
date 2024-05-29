@@ -1,103 +1,88 @@
-import contactsService from '../services/contactsServices.js';
-import HttpError from '../helpers/HttpError.js';
-import ctrlWrapper from '../helpers/ctrlWrapper.js';
-import { filters } from '../schemas/contactsModel.js';
-import converter from '../helpers/converter.js';
+import contactsService from "../services/contactsServices.js";
+import HttpError from '../helpers/HttpError.js'
 
-export const userFilter = { id: null };
-
-const getAll = async (req, res, next) => {
-  const pageDefault = 1;
-  const limitDefault = 10;
-
-  let { page = pageDefault, limit = limitDefault } = req.query;
-
-  page = Number(page) || pageDefault;
-  limit = Number(limit) || limitDefault;
-
-  const pagination = {
-    skip: (page - 1) * limit,
-    limit,
-  };
-
-  const filter = {};
-  filters.split(',').forEach(field => {
-    let queryField = req.query[field];
-
-    if (field === 'favorite') queryField = converter.stringToBool(queryField);
-
-    if (queryField !== undefined) {
-      filter[field] = queryField;
+const getAllContacts = async (req, res, next) => {
+    try {
+        const contacts = await contactsService.listContacts();
+        res.json(contacts);
+    } catch (error) {
+        next(error);
     }
-  });
-
-  const total = await contactsService.count(filter);
-
-  const contacts = await contactsService.list(filter, pagination);
-
-  const reqBody = {
-    totalContacts: total,
-    page,
-    limit,
-    contacts,
-  };
-
-  res.json(reqBody);
 };
 
-const getOne = async (req, res, next) => {
-  const { id } = req.params;
-  const contact = await contactsService.getById(id);
+const getOneContact = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const contact = await contactsService.getContactById(id);
+        if (!contact) {
+            throw HttpError(404);
+        }
 
-  if (!contact) throw HttpError(404);
-
-  res.json(contact);
+        res.json(contact);
+    } catch(error) {
+        next(error);
+    }
 };
 
-const remove = async (req, res, next) => {
-  const { id } = req.params;
-  const contact = await contactsService.remove(id);
+const deleteContact = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const contact = await contactsService.removeContact(id);
+        if (!contact) {
+            throw HttpError(404);
+        }
 
-  if (!contact) throw HttpError(404);
-
-  res.json(contact);
+        res.json(contact);
+    } catch(error) {
+        next(error);
+    }
 };
 
-const create = async (req, res, next) => {
-  const contact = await contactsService.add({
-    ...req.body,
-    owner: req.user._id,
-  });
+const createContact = async (req, res, next) => {
+    try {
+        const {name, email, phone} = await req.body;
+        const contact = await contactsService.addContact(name, email, phone);
 
-  res.status(201).json(contact);
+        res.status(201).json(contact);
+    } catch(error) {
+        next(error);
+    }
 };
 
-const update = async (req, res, next) => {
-  if (Object.keys(req.body).length === 0)
-    throw HttpError(400, 'Body must have at least one field');
+const updateContact = async (req, res, next) => {
+    try {
+        if (Object.keys(req.body).length === 0)
+            throw HttpError(400, 'Body must have at least one field');
 
-  const { id } = req.params;
-  const contact = await contactsService.update(id, req.body);
+        const { id } = req.params;
+        const contact = await contactsService.updateContact(id, req.body);
 
-  if (!contact) throw HttpError(404);
+        if (!contact) throw HttpError(404);
 
-  res.json(contact);
+        res.json(contact);
+    } catch (error) {
+        next(error);
+    }
 };
 
-const updateStatus = async (req, res, next) => {
-  const { id } = req.params;
-  const contact = await contactsService.update(id, req.body);
+const updateStatusContact = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const contact = await contactsService.updateContact(id, req.body);
 
-  if (!contact) throw HttpError(404);
+    if (!contact) throw HttpError(404);
 
-  res.json(contact);
+    res.json(contact);
+  } catch (error) {
+    next(error.status ? error : {});
+  }
 };
 
 export default {
-  getAll: ctrlWrapper(getAll),
-  getOne: ctrlWrapper(getOne),
-  remove: ctrlWrapper(remove),
-  create: ctrlWrapper(create),
-  update: ctrlWrapper(update),
-  updateStatus: ctrlWrapper(updateStatus),
-};
+getAllContacts,
+getOneContact,
+deleteContact,
+createContact,
+updateContact,
+updateStatusContact
+}
