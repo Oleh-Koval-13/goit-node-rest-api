@@ -1,11 +1,13 @@
-import express from 'express';
-import morgan from 'morgan';
-import cors from 'cors';
-import mongoose from 'mongoose';
-import 'dotenv/config';
+import express from "express";
+import morgan from "morgan";
+import cors from "cors";
+import mongoose from "mongoose";
+import "dotenv/config";
 
 import contactsRouter from './routes/contactsRouter.js';
 import authRouter from './routes/authRouter.js';
+
+const DB_URI = process.env.DB_URI;
 
 const app = express();
 
@@ -25,17 +27,15 @@ app.use((err, req, res, next) => {
   res.status(status).json({ message });
 });
 
-const uri = process.env.DB_URI;
-
-// run server
+// Run server
 (async () => {
   try {
-    await mongoose.connect(uri);
+    await mongoose.connect(DB_URI);
     await mongoose.connection.db.admin().command({ ping: 1 });
     console.log('Database connection successful');
 
     app.listen(8000, () => {
-      console.log(`Server is running. Use our API on port: 8000`);
+      console.log("Server is running. Use our API on port: 8000");
     });
   } catch (error) {
     console.error(error);

@@ -1,8 +1,10 @@
-import { Schema, model } from 'mongoose';
+import mongoose from 'mongoose';
 import { userFilter } from '../controllers/contactsControllers.js';
 
 export const queryProjection = '-createdAt -updatedAt -owner';
 export const filters = 'name,email,phone,favorite';
+
+const Schema = mongoose.Schema;
 
 const contactSchema = new Schema(
   {
@@ -62,6 +64,6 @@ contactSchema.pre(/^count/, function (next) {
   next();
 });
 
-const Contact = model('contact', contactSchema);
+const Contact = mongoose.model('contact', contactSchema);
 
 export default Contact;
