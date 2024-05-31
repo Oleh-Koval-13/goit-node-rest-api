@@ -1,36 +1,32 @@
 import Contact from '../schemas/contactsModel.js';
+import { queryProjection } from '../schemas/contactsModel.js';
 
-async function listContacts() {
-  const contacts = await Contact.find();
-  return contacts;
-}
+const count = filter => Contact.countDocuments(filter);
 
-async function getContactById(contactId) {
-  const contact = await Contact.findById(contactId);
-  return contact ? contact : null;
-}
+const list = (filter, pagination) =>
+  Contact.find(filter)
+    .select(queryProjection)
+    .skip(pagination.skip)
+    .limit(pagination.limit);
 
-async function removeContact(contactId) {
-  const contact = await Contact.findByIdAndDelete({ _id: contactId });
-  return contact;
-}
+const getById = contactId =>
+  Contact.findById(contactId).select(queryProjection);
 
-async function addContact(name, email, phone) {
-  const newContact = await Contact.create({ name, email, phone });
-  return newContact;
-}
+const remove = contactId =>
+  Contact.findByIdAndDelete(contactId).select(queryProjection);
 
-async function updateContact(id, updatedData) {
-  const updContact = await Contact.findByIdAndUpdate({ _id: id }, updatedData, {
+const add = contactData => Contact.create(contactData);
+
+const update = (contactId, contactData) =>
+  Contact.findByIdAndUpdate(contactId, contactData, {
     new: true,
-  });
-  return updContact;
-}
+  }).select(queryProjection);
 
 export default {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
+  count,
+  list,
+  getById,
+  remove,
+  add,
+  update,
 };
