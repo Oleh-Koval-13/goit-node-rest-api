@@ -1,73 +1,16 @@
-
 import express from "express";
-import contactsCtrl from '../controllers/contactsControllers.js';
-import contactsSchemas from '../schemas/contactsSchemas.js';
-import validateBody from '../helpers/validateBody.js';
-import isValidId from '../middlewares/validateId.js';
-import authControl from '../middlewares/authControl.js';
+import { current, login, logout, register, sendEmailAgain, verify } from "../controllers/authControllers.js";
+import auth from "../middleware/authMiddleware.js";
 
-const contactsRouter = express.Router();
+const authRouter = express.Router();
 
-contactsRouter.use(authControl);
+const jsonParse = express.json();
 
-contactsRouter.get('/', contactsCtrl.getAll);
+authRouter.post("/register", jsonParse, register);
+authRouter.post("/login", jsonParse, login);
+authRouter.post("/logout", auth, logout);
+authRouter.get("/current", auth, current);
+authRouter.get("/verify/:verificationToken", verify);
+authRouter.post("/verify", jsonParse, sendEmailAgain);
 
-contactsRouter.get('/:id', isValidId, contactsCtrl.getOne);
-
-contactsRouter.delete('/:id', isValidId, contactsCtrl.remove);
-
-contactsRouter.post(
-  '/',
-  validateBody(contactsSchemas.create, true),
-  contactsCtrl.create
-);
-
-contactsRouter.put(
-  '/:id',
-  isValidId,
-  validateBody(contactsSchemas.update, true),
-  contactsCtrl.update
-);
-
-contactsRouter.patch(
-  '/:id/favorite',
-  isValidId,
-  validateBody(contactsSchemas.updateStatus),
-  contactsCtrl.updateStatus
-);
-
-export default contactsRouter;
-=======
-import express from 'express';
-import authCtrl from '../controllers/authControllers.js';
-import userSchemas from '../schemas/usersSchemas.js';
-import validateBody from '../helpers/validateBody.js';
-import authControl from '../middlewares/authControl.js';
-
-const usersRouter = express.Router();
-
-usersRouter.post(
-  '/register',
-  validateBody(userSchemas.create, true),
-  authCtrl.register
-);
-
-usersRouter.post(
-  '/login',
-  validateBody(userSchemas.create, true),
-  authCtrl.login
-);
-
-usersRouter.post('/logout', authControl, authCtrl.logout);
-
-usersRouter.get('/current', authControl, authCtrl.current);
-
-usersRouter.patch(
-  '/',
-  authControl,
-  validateBody(userSchemas.updateSubscription),
-  authCtrl.updateSubscription
-);
-
-export default usersRouter;
-
+export default authRouter;

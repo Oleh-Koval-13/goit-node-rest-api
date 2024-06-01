@@ -1,107 +1,144 @@
-import contactsService from '../services/contactsServices.js';
-import HttpError from '../helpers/HttpError.js';
-import ctrlWrapper from '../helpers/ctrlWrapper.js';
-import { filters } from '../schemas/contactsModel.js';
-import converter from '../helpers/converter.js';
+import HttpError from "../helpers/HttpError.js";
+import Contact from "../models/contactsModel.js";
+import { createContactSchema, updateContactSchema } from "../schemas/contactsSchemas.js";
 
-export const userFilter = { id: null };
+const paginationAndFavorites = async (contacts, query, id) => {
+    let { limit, page, favorite } = query;
+    page = Number(page) - 1;
+    limit = Number(limit);
 
-const getAll = async (req, res, next) => {
-  const pageDefault = 1;
-  const limitDefault = 10;
-
-  let { page = pageDefault, limit = limitDefault } = req.query;
-
-  page = Number(page) || pageDefault;
-  limit = Number(limit) || limitDefault;
-
-  const pagination = {
-    skip: (page - 1) * limit,
-    limit,
-  };
-
-  const filter = {};
-  filters.split(',').forEach(field => {
-    let queryField = req.query[field];
-
-    if (field === 'favorite') queryField = converter.stringToBool(queryField);
-
-    if (queryField !== undefined) {
-      filter[field] = queryField;
+    if (!page) {
+        page = 0;
     }
-  });
 
-  const total = await contactsService.count(filter);
+    if (!limit) {
+        limit = 10;
+    }
 
-  const contacts = await contactsService.list(filter, pagination);
+    const length = contacts.length;
 
-  const reqBody = {
-    totalContacts: total,
-    page,
-    limit,
-    contacts,
-  };
+    const countOfPages = Math.ceil(length / limit) - 1;
 
-  res.json(reqBody);
+    if (page > countOfPages) {
+        page = countOfPages;
+    }
+
+    const skip = page * limit;
+
+    const filter = favorite ? { owner: id, favorite: true } : { owner: id };
+
+    try {
+        return await Contact.find(filter).limit(limit).skip(skip);
+    } catch (err) {
+        return [];
+    }
+}
+
+export const getAllContacts = async (req, res) => {
+    const contacts = await Contact.find({ owner: req.user._id });
+    const result = await paginationAndFavorites(contacts, req.query, req.user._id);
+    res.json(result);
 };
 
-const getOne = async (req, res, next) => {
-  const { id } = req.params;
-  const contact = await contactsService.getById(id);
+export const getOneContact = async (req, res) => {
+    const { id } = req.params;
 
-  if (!contact) throw HttpError(404);
+    try {
+        const result = await Contact.findOne({ owner: req.user._id, _id: id });
 
-  res.json(contact);
+        if (!result) {
+            res.status(404).send(JSON.stringify({ message: HttpError(404).message }));
+            return
+        }
+
+        res.status(200).json(result);
+    } catch (err) {
+        res.status(404).send(JSON.stringify({ message: HttpError(404).message }));
+    }
 };
 
-const remove = async (req, res, next) => {
-  const { id } = req.params;
-  const contact = await contactsService.remove(id);
+export const deleteContact = async (req, res) => {
+    const { id } = req.params;
 
-  if (!contact) throw HttpError(404);
-
-  res.json(contact);
+    try {
+        const result = await Contact.findOneAndDelete({ owner: req.user._id, _id: id });
+        if (!result) {
+            res.status(404).send(JSON.stringify({ message: HttpError(404).message }));
+            return
+        }
+        res.status(200).json(result);
+    } catch (err) {
+        res.status(404).send(JSON.stringify({ message: HttpError(404).message }));
+    }
 };
 
-const create = async (req, res, next) => {
-  const contact = await contactsService.add({
-    ...req.body,
-    owner: req.user._id,
-  });
+export const createContact = async (req, res) => {
+    const contact = {
+        ...req.body,
+        favorite: false,
+        owner: req.user._id,
+    }
 
-  res.status(201).json(contact);
+    const { error } = createContactSchema.validate(contact);
+
+    if (error) {
+        res.status(400).send(JSON.stringify({ message: HttpError(400).message }));
+        return
+    }
+
+    const result = await Contact.create(contact);
+
+    res.status(201).send(result)
 };
 
-const update = async (req, res, next) => {
-  if (Object.keys(req.body).length === 0)
-    throw HttpError(400, 'Body must have at least one field');
+export const updateContact = async (req, res) => {
+    const { id } = req.params;
 
-  const { id } = req.params;
-  const contact = await contactsService.update(id, req.body);
+    const contact = { ...req.body }
 
-  if (!contact) throw HttpError(404);
+    if (!contact.name && !contact.email && !contact.phone) {
+        res.status(400).send(JSON.stringify({ message: HttpError(400, "Body must have at least one field").message }));
+        return
+    }
 
-  res.json(contact);
+    const { error } = updateContactSchema.validate(contact);
+
+    if (error) {
+        res.status(400).send(JSON.stringify({ message: HttpError(400).message }));
+        return
+    }
+
+
+    try {
+        const result = await Contact.findOneAndUpdate({ owner: req.user._id, _id: id }, contact);
+
+        if (!result) {
+            res.status(404).send(JSON.stringify({ message: HttpError(404).message }));
+            return
+        }
+
+        res.status(200).json(await Contact.findOne({ owner: req.user._id, _id: id }));
+    } catch (err) {
+        res.status(404).send(JSON.stringify({ message: HttpError(404).message }));
+    }
 };
 
-const updateStatus = async (req, res, next) => {
-  const { id } = req.params;
-  const contact = await contactsService.update(id, req.body);
+export const updateStatusContact = async (req, res) => {
+    const { id } = req.params;
 
-  if (!contact) throw HttpError(404);
+    const body = req.body;
 
-  res.json(contact);
-};
 
-export default {
-  getAll: ctrlWrapper(getAll),
-  getOne: ctrlWrapper(getOne),
-  remove: ctrlWrapper(remove),
-  create: ctrlWrapper(create),
-  update: ctrlWrapper(update),
-  updateStatus: ctrlWrapper(updateStatus),
+    try {
+        const result = await Contact.findOneAndUpdate({ owner: req.user._id, _id: id }, body);
 
-};
+        if (!result) {
+            res.status(404).send(JSON.stringify({ message: HttpError(404).message }));
+            return
+        }
 
-};
-
+        res.status(200).json(await Contact.findOne({ owner: req.user._id, _id: id }));
+    } catch (error) {
+        res.status(404).send(JSON.stringify({ message: HttpError(404).message }));
+    }
+}
