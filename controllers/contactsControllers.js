@@ -100,4 +100,8 @@ export default {
   create: ctrlWrapper(create),
   update: ctrlWrapper(update),
   updateStatus: ctrlWrapper(updateStatus),
+
 };
+
+};
+

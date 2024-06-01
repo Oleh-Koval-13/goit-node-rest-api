@@ -1,19 +1,21 @@
-import express from "express";
-import morgan from "morgan";
-import cors from "cors";
-import mongoose from "mongoose";
-import "dotenv/config";
+import express from 'express';
+import morgan from 'morgan';
+import cors from 'cors';
 
 import contactsRouter from './routes/contactsRouter.js';
 import authRouter from './routes/authRouter.js';
 
+=======
+
 const DB_URI = process.env.DB_URI;
+
 
 const app = express();
 
 app.use(morgan('tiny'));
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 app.use('/users', authRouter);
 app.use('/api/contacts', contactsRouter);
@@ -27,6 +29,9 @@ app.use((err, req, res, next) => {
   res.status(status).json({ message });
 });
 
+
+export default app;
+=======
 // Run server
 (async () => {
   try {
@@ -42,3 +47,4 @@ app.use((err, req, res, next) => {
     process.exit(1);
   }
 })();
+
