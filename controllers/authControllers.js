@@ -2,11 +2,14 @@ import usersService from '../services/authServices.js';
 import HttpError from '../helpers/HttpError.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+
 import gravatar from 'gravatar';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import Jimp from 'jimp';
 import crypto from 'node:crypto';
+=======
+
 import ctrlWrapper from '../helpers/ctrlWrapper.js';
 
 const register = async (req, res, next) => {
@@ -18,12 +21,18 @@ const register = async (req, res, next) => {
 
   const hashPass = await bcrypt.hash(password, 12);
 
+
   const avatarURL = await gravatar.url(email);
 
   const { subscription } = await usersService.add({
     email,
     password: hashPass,
     avatarURL,
+=======
+  const { subscription } = await usersService.add({
+    email,
+    password: hashPass,
+
   });
 
   const resBody = { user: { email, subscription } };
@@ -87,6 +96,7 @@ const updateSubscription = async (req, res, next) => {
   res.json(resBody);
 };
 
+
 const updateAvatar = async (req, res, next) => {
   if (!req.file) throw HttpError(400, 'File not found!');
 
@@ -107,11 +117,16 @@ const updateAvatar = async (req, res, next) => {
   res.json({ avatarURL });
 };
 
+
+
 export default {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   logout: ctrlWrapper(logout),
   current: ctrlWrapper(current),
   updateSubscription: ctrlWrapper(updateSubscription),
+
   updateAvatar: ctrlWrapper(updateAvatar),
+
+
 };

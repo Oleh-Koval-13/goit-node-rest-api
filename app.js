@@ -5,6 +5,11 @@ import cors from 'cors';
 import contactsRouter from './routes/contactsRouter.js';
 import authRouter from './routes/authRouter.js';
 
+=======
+
+const DB_URI = process.env.DB_URI;
+
+
 const app = express();
 
 app.use(morgan('tiny'));
@@ -24,4 +29,22 @@ app.use((err, req, res, next) => {
   res.status(status).json({ message });
 });
 
+
 export default app;
+=======
+// Run server
+(async () => {
+  try {
+    await mongoose.connect(DB_URI);
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    console.log('Database connection successful');
+
+    app.listen(8000, () => {
+      console.log("Server is running. Use our API on port: 8000");
+    });
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+})();
+
